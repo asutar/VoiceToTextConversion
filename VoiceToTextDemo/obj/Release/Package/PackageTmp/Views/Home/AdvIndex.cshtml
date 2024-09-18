@@ -1,0 +1,229 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bootstrap Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @*reference link https://code2night.com/Blog/MyBlog/realtime-speech-to-text-converter-using-javascript*@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        #div_start {
+            float: right;
+            margin-top: -414px;
+        }
+
+        #startSpeech {
+            border: 0;
+            background-color: transparent;
+            padding: 0;
+        }
+
+        #output {
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: left;
+            min-height: 150px;
+        }
+
+        #info {
+            font-size: 20px;
+            text-align: center;
+            color: #777;
+        }
+
+        #div_GenerateDoc {
+            float: right;
+            margin-top: -360px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mt-3">
+        <div id="info" style="visibility: visible;">
+            <p id="info_start" style="display: inline;">
+                Click on the microphone icon and begin speaking for as long as you like.
+            </p>
+        </div>
+        <form action="/action_page.php">
+            <div class="mb-3 mt-3">
+                <textarea class="form-control" rows="5" style="height: 398px;" id="output" name="output"></textarea>
+            </div>
+            <button type="button" id="playPauseBtn" class="btn btn-primary">
+                <i class="fas fa-play"></i> Play
+            </button>
+            <button type="button" id="stopSpeech" class="btn btn-danger" disabled>Stop Speaking</button>
+            <button type="button" class="btn btn-warning" id="Reset">Reset</button>
+            @*<button type="button" id="translateButton" class="btn btn-primary mt-3">Translate Text</button>*@
+            <div id="div_GenerateDoc">
+                <button type="button" id="generateDoc" style="display:inline-block" class="btn btn-primary">
+                    <i class="fas fa-file-word"></i>
+                </button>
+            </div>
+            <div id="div_start">
+                <button type="button" id="startSpeech" style="display: inline-block;"><img alt="Start" id="start_img" src="~/images/mic.gif"></button>
+            </div>
+            <select id="ddlLanguage" name="ddlLanguage">
+                <option value="mr-IN">Marathi </option>
+                <option value="gu-IN">Gujarati </option>
+                <option value="hi-IN">Hindi</option>
+                <option value="en-US">English</option>
+            </select>
+            <div id="stopDiv"></div>
+            @*<div class="mb-3 mt-3">
+            <textarea class="form-control" rows="5" style="height: 398px;" id="Transoutput" name="Transoutput"></textarea>
+        </div>*@
+        </form>
+    </div>
+
+</body>
+</html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+@*<script>
+    $(document).ready(function () {
+        $('#translateButton').click(function () {
+            const textToTranslate = $('#output').val();
+            const targetLanguage = 'en';
+
+            $.ajax({
+                url: "https://libretranslate.de/translate", // LibreTranslate Proxy (with CORS enabled)
+                type: "POST",
+                data: {
+                    q: textToTranslate,
+                    source: "auto",  // Auto-detect source language
+                    target: targetLanguage,
+                    format: "text"
+                },
+                success: function (response) {
+                    $('#output').val(response.translatedText);
+                },
+                error: function () {
+                    alert("Error occurred while translating text.");
+                }
+            });
+        });
+    });
+</script>*@
+<script>
+    var selectedValue = '';
+    let caretPosition = 0;
+
+    window.onload = function () {
+        document.getElementById('ddlLanguage').addEventListener('change', handleDropdownChange);
+        document.getElementById('output').addEventListener('click', trackCaretPosition);
+        document.getElementById('output').addEventListener('keyup', trackCaretPosition);
+    };
+
+    function handleDropdownChange() {
+        var dropdown = document.getElementById('ddlLanguage');
+        selectedValue = dropdown.value;
+        document.getElementById('output').value = '';
+    }
+
+    function trackCaretPosition() {
+        const output = document.getElementById('output');
+        caretPosition = output.selectionStart;
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const startSpeechButton = document.getElementById('startSpeech');
+        const stopSpeechButton = document.getElementById('stopSpeech');
+        const outputDiv = document.getElementById('output');
+        const resetButton = document.getElementById('Reset');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        let isPlaying = false;
+        let recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+
+        recognition.onstart = () => {
+            debugger;
+            //outputDiv.value = 'Listening..';
+            //outputDiv.value = '';
+            startSpeechButton.disabled = true;
+            stopSpeechButton.disabled = false;
+            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+        };
+
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+
+            const output = document.getElementById('output');
+            const currentText = output.value;
+
+            // Insert the recognized speech at the caret position
+            const newText = currentText.slice(0, caretPosition) + transcript + currentText.slice(caretPosition);
+            output.value = newText;
+
+            // Move caret to the end of the inserted text
+            caretPosition += transcript.length;
+            output.setSelectionRange(caretPosition, caretPosition);
+        };
+
+        recognition.onerror = (event) => {
+            outputDiv.value = 'Error occurred: ' + event.error;
+            stopSpeech();
+        };
+
+        recognition.onend = () => {
+            document.getElementById('stopDiv').innerHTML = 'Speech recognition stopped';
+            startSpeechButton.disabled = false;
+            stopSpeechButton.disabled = true;
+        };
+
+        startSpeechButton.addEventListener('click', () => {
+            if (selectedValue == "") {
+                var dropdown = document.getElementById('ddlLanguage');
+                selectedValue = dropdown.value;
+            }
+            recognition.lang = selectedValue || 'en-US';
+            recognition.start();
+        });
+
+        stopSpeechButton.addEventListener('click', () => {
+            recognition.stop();
+        });
+
+        resetButton.addEventListener('click', () => {
+            startSpeechButton.disabled = false;
+            outputDiv.value = '';
+            caretPosition = 0;
+            recognition.stop();
+        });
+        // Generate Word file
+        document.getElementById('generateDoc').addEventListener('click', () => {
+            const text = document.getElementById('output').value;
+            const blob = new Blob(['\ufeff' + text], {
+                type: 'application/msword'
+            });
+            saveAs(blob, 'speech_text.doc');
+        });
+      
+        var GetCurrentText = '';
+        playPauseBtn.addEventListener('click', function () {
+            isPlaying = !isPlaying;
+            debugger;
+            if (isPlaying) {
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i> Play ';
+                recognition.stop();
+                GetCurrentText = output.value;
+            } else {
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i> Pause';
+                recognition.start();
+               // document.getElementById('output').value = GetCurrentText;
+                //outputDiv.value = GetCurrentText;
+            }
+        });
+    });
+</script>
+

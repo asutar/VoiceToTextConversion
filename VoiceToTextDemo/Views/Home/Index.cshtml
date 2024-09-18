@@ -1,0 +1,170 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bootstrap Example</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @*reference link https://code2night.com/Blog/MyBlog/realtime-speech-to-text-converter-using-javascript*@
+    <style>
+        #div_start {
+            float: right;
+            margin-top: -166px;
+        }
+
+        #startSpeech {
+            border: 0;
+            background-color: transparent;
+            padding: 0;
+        }
+
+        #output {
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: left;
+            min-height: 150px;
+        }
+
+        #info {
+            font-size: 20px;
+            text-align: center;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mt-3">
+        <div id="info" style="visibility: visible;">
+            <p id="info_start" style="display: inline;">
+                Click on the microphone icon and begin speaking for as long as you like.
+            </p>
+        </div>
+        <form action="/action_page.php">
+            <div class="mb-3 mt-3">
+                @*<label for="comment">Textarea:</label>*@
+                <textarea class="form-control" rows="5" id="output" name="output"></textarea>
+            </div>
+            @*<button type="button" class="btn btn-success" id="startSpeech">Start Speaking</button>*@
+            <button type="button" id="stopSpeech" class="btn btn-danger" disabled>Stop Speaking</button>
+            <button type="button" class="btn btn-warning" id="Reset">Reset</button>
+            <div id="div_start">
+                <button type="button" id="startSpeech"  style="display: inline-block;"><img alt="Start" id="start_img" src="~/images/mic.gif"></button>
+            </div>
+            <select id="ddlLanguage" name="ddlLanguage">
+                <option value="gu-IN">Gujarati </option>
+                <option value="hi-IN">Hindi</option>
+                <option value="en-US">English</option>
+            </select>
+            <div id="stopDiv"></div>
+        </form>
+    </div>
+
+</body>
+</html>
+
+@*<div class="jumbotron">
+    <h4>ASP.NET</h4>
+    <textarea id="output" name="w3review" rows="4" cols="50"></textarea>
+</div>*@
+
+@*<div class="row">
+    <button type="button" class="btn btn-success" id="startSpeech">Start Speaking</button>
+    <button type="button" id="stopSpeech" class="btn btn-danger" disabled>Stop Speaking</button>
+    <button type="button" class="btn btn-warning" id="Reset">Reset</button>
+    <select id="ddlLanguage" name="ddlLanguage">
+        <option value="gu-IN">Gujarati </option>
+        <option value="hi-IN">Hindi</option>
+        <option value="en-US">English</option>
+    </select>
+    <div id="stopDiv"></div>
+</div>*@
+<script>
+    var selectedValue = '';
+
+    window.onload = function () {
+        document.getElementById('ddlLanguage').addEventListener('change', handleDropdownChange);
+    }
+    function handleDropdownChange() {
+        // Get the dropdown element by its ID
+        var dropdown = document.getElementById('ddlLanguage');
+        // Get the selected value
+        selectedValue = dropdown.value;
+        document.getElementById('output').innerHTML = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const startSpeechButton = document.getElementById('startSpeech');
+        const stopSpeechButton = document.getElementById('stopSpeech');
+        const outputDiv = document.getElementById('output');
+        const stopDiv = document.getElementById('stopDiv');
+        const resetButton = document.getElementById('Reset');
+        //var dropdown = document.getElementById('ddlLanguage');
+        //var selectedValue = dropdown.value;
+
+        let recognition = new webkitSpeechRecognition();
+        // alert(selectedValue);
+        recognition.continuous = true;
+        recognition.lang = selectedValue;
+
+        recognition.onstart = () => {
+            outputDiv.innerHTML = 'Listening..';
+            startSpeechButton.disabled = true;
+            stopSpeechButton.disabled = false;
+        };
+
+        recognition.onresult = (event) => {
+            debugger;
+            //const transcript = '';
+
+            $.each(event.results, function (index, resultGroup) {
+                $.each(resultGroup, function (subIndex, result) {
+                    transcript = result.transcript;
+                });
+            });
+
+            //const transcript = event.results[0][0].transcript;//event.result[event.result.lenght - 1][0].transcript;
+            if (outputDiv.innerHTML == "Listening...") {
+                outputDiv.innerHTML = "";
+            }
+            outputDiv.innerHTML = outputDiv.innerHTML + ' ' + transcript
+        };
+
+        recognition.onerror = (event) => {
+            outputDiv.innerHTML = 'Error occured:' + event.error;
+            stopSpeech();
+        };
+        recognition.onend = () => {
+            stopDiv.innerHTML = 'Speech recognition stopped';
+            startSpeechButton.disabled = false;
+            startSpeechButton.disabled = true;
+        };
+
+        startSpeechButton.addEventListener('click', startSpeech);
+        stopSpeechButton.addEventListener('click', stopSpeech);
+        resetButton.addEventListener('click', ResetButton);
+
+        function startSpeech() {
+            debugger;
+            recognition.lang = selectedValue == "" ? 'gu-IN' : selectedValue;
+            recognition.start();
+        }
+
+        function stopSpeech() {
+            startSpeechButton.disabled = false;
+            recognition.stop();
+        }
+        function ResetButton() {
+            startSpeechButton.disabled = false;
+            document.getElementById('output').innerHTML = '';
+            recognition.stop();
+        }
+    });
+</script>
+
